@@ -33,7 +33,7 @@ bool updater_class::send_string(QString *s)
         bytes.append(static_cast<char>(c.unicode()));
     }
 
-    for (int i = 0; i < bytes.length(); i++) {
+    for (int i=0; i<bytes.length(); i++) {
         if (!send_byte(bytes[i])) {
             return false;
         }
@@ -50,15 +50,17 @@ void updater_class::process_data(void)
 {
     QString data = m_device->readAll();
 
-    if (data.contains("OK\r\n")) {
+    if (data.contains("VER")) {
+        std::cout << "<< " << data.toStdString();
+        m_device_rsp = true;
+    } else if (data.contains("OK")) {
         std::cout << "<< OK" << std::endl;
         m_device_rsp = true;
-    } else if (data.contains("DONE\r\n")) {
+    } else if (data.contains("DONE")) {
         std::cout << "<< DONE" << std::endl;
         m_device_rsp = true;
-    } else if (data.contains("ERROR\r\n")) {
+    } else if (data.contains("ERROR")) {
         std::cout << "<< ERROR" << std::endl;
-        return;
     }
 }
 
@@ -94,21 +96,36 @@ int updater_class::exec(int argc, char *argv[])
         return -3;
     }
 
-    // send update command to target device
-    qint64 filesize = fd.size();
-    QString cmd = QString("FW+UPD:") + cmd.number(filesize);
+    // get target firmware version
+    QString cmd = QString("FW+VER?");
     std::cout << ">> " << cmd.toStdString() << std::endl;
     send_string(&cmd);
     m_device->waitForBytesWritten();
-    m_device->waitForReadyRead();
     while (!m_device_rsp) {
-        m_device_rsp = false;
+        QThread::msleep(100);
+        if (!m_device_rsp) {
+            m_device->waitForReadyRead();
+        }
     }
+    m_device_rsp = false;
+
+    // send update command to target device
+    qint64 filesize = fd.size();
+    cmd = QString("FW+UPD:") + cmd.number(filesize);
+    std::cout << ">> " << cmd.toStdString() << std::endl;
+    send_string(&cmd);
+    m_device->waitForBytesWritten();
+    while (!m_device_rsp) {
+        QThread::msleep(100);
+        if (!m_device_rsp) {
+            m_device->waitForReadyRead();
+        }
+    }
+    m_device_rsp = false;
 
     // send firmware data
     QByteArray filedata = fd.readAll();
-    for (int i = 0; i < filedata.size(); i++) {
-        while (!m_device->isRequestToSend());
+    for (int i=0; i<filedata.size(); i++) {
         bool rc = send_byte(filedata.at(i));
         if (!rc) {
             std::cout << "write failed" << std::endl;
@@ -117,16 +134,19 @@ int updater_class::exec(int argc, char *argv[])
         // flush every 32k data
         if ((i+1) % 32768 == 0) {
             m_device->waitForBytesWritten();
-            m_device->waitForReadyRead();
             QThread::msleep(1000);
         }
         std::cout << ">> " << i*100/filedata.size() << "%\r";
     }
+    std::cout << std::endl;
     m_device->waitForBytesWritten();
-    m_device->waitForReadyRead();
     while (!m_device_rsp) {
-        m_device_rsp = false;
+        QThread::msleep(100);
+        if (!m_device_rsp) {
+            m_device->waitForReadyRead();
+        }
     }
+    m_device_rsp = false;
 
     // reset target device
     cmd = QString("FW+RST");
