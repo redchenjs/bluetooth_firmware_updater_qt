@@ -13,7 +13,7 @@ set(SRCS main.cpp updater.cpp)
 set(INSTALLDIR bin)
 add_executable(spp-fw-updater ${SRCS})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 target_link_libraries(spp-fw-updater Qt5::Core Qt5::SerialPort)
 
 install(TARGETS spp-fw-updater DESTINATION ${INSTALLDIR})
