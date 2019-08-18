@@ -42,6 +42,6 @@ int main(int argc, char *argv[])
     qInstallMessageHandler(msg_handle);
 
     updater_class updater;
-    
+
     return updater.exec(argc, argv);
 }
