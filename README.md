@@ -14,5 +14,5 @@ make
 
 ```
 sudo rfcomm bind hciX XX:XX:XX:XX:XX:XX
-spp-fw-updater /dev/rfcommX firmware.bin
+spp-firmware-updater /dev/rfcommX firmware.bin
 ```

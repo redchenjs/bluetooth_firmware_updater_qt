@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
 
-project(spp_fw_updater)
+project(spp_firmware_updater)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
@@ -11,9 +11,9 @@ find_package(Qt5SerialPort REQUIRED)
 
 set(SRCS main.cpp updater.cpp)
 set(INSTALLDIR bin)
-add_executable(spp-fw-updater ${SRCS})
+add_executable(spp-firmware-updater ${SRCS})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-target_link_libraries(spp-fw-updater Qt5::Core Qt5::SerialPort)
+target_link_libraries(spp-firmware-updater Qt5::Core Qt5::SerialPort)
 
-install(TARGETS spp-fw-updater DESTINATION ${INSTALLDIR})
+install(TARGETS spp-firmware-updater DESTINATION ${INSTALLDIR})
