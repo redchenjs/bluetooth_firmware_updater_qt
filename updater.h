@@ -19,14 +19,13 @@ public:
     int exec(int argc, char *argv[]);
 
 private:
-    void process_data(void);
-
-    bool send_string(QString *s);
-    bool send_byte(const char c);
-
     QSerialPort *m_device;
-    bool m_device_rsp;
+    size_t m_device_rsp;
 
+    bool send_byte(const char c);
+    bool send_string(QString *s);
+
+    void process_data(void);
 };
 
 #endif // UPDATER_H
