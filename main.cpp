@@ -12,7 +12,7 @@ void msg_handle(QtMsgType type, const QMessageLogContext &context, const QString
 {
     FILE *fp;
 
-    if ((fp = fopen("/tmp/spp-fw-updater.log","w")) == NULL) {
+    if (!(fp = fopen("/tmp/spp-fw-updater.log","w"))) {
         return;
     }
 
