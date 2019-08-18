@@ -136,7 +136,7 @@ int updater_class::exec(int argc, char *argv[])
             m_device->waitForBytesWritten();
             QThread::msleep(1000);
         }
-        std::cout << ">> " << i*100/filedata.size() << "%\r";
+        std::cout << ">> SENT:" << i*100/filedata.size() << "%\r";
     }
     std::cout << std::endl;
     m_device->waitForBytesWritten();
