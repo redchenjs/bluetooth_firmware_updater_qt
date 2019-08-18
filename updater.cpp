@@ -51,13 +51,13 @@ void updater_class::process_data(void)
     QString data = m_device->readAll();
 
     if (data.contains("OK\r\n")) {
-        std::cout << "<< OK\n";
+        std::cout << "<< OK" << std::endl;
         m_device_rsp = true;
     } else if (data.contains("DONE\r\n")) {
-        std::cout << "<< DONE\n";
+        std::cout << "<< DONE" << std::endl;
         m_device_rsp = true;
     } else if (data.contains("ERROR\r\n")) {
-        std::cout << "<< ERROR\n";
+        std::cout << "<< ERROR" << std::endl;
         return;
     }
 }
@@ -65,7 +65,7 @@ void updater_class::process_data(void)
 int updater_class::exec(int argc, char *argv[])
 {
     if (argc != 3) {
-        std::cout << "Usage: " << argv[0] << " /dev/rfcommX firmware.bin\n";
+        std::cout << "Usage: " << argv[0] << " /dev/rfcommX firmware.bin" << std::endl;
         return -1;
     }
 
@@ -82,7 +82,7 @@ int updater_class::exec(int argc, char *argv[])
         m_device->setFlowControl(QSerialPort::NoFlowControl);
         m_device->flush();
     } else {
-        std::cout << "could not open device\n";
+        std::cout << "could not open device" << std::endl;
         return -2;
     }
 
@@ -90,14 +90,14 @@ int updater_class::exec(int argc, char *argv[])
     QString filename = QString(argv[2]);
     QFile fd(filename);
     if (!fd.open(QIODevice::ReadOnly)) {
-        std::cout << "could not open file\n";
+        std::cout << "could not open file" << std::endl;
         return -3;
     }
 
     // send update command to target device
     qint64 filesize = fd.size();
     QString cmd = QString("FW+UPD:") + cmd.number(filesize);
-    std::cout << ">> " << cmd.toStdString() << '\n';
+    std::cout << ">> " << cmd.toStdString() << std::endl;
     send_string(&cmd);
     m_device->waitForBytesWritten();
     m_device->waitForReadyRead();
@@ -111,7 +111,7 @@ int updater_class::exec(int argc, char *argv[])
         while (!m_device->isRequestToSend());
         bool rc = send_byte(filedata.at(i));
         if (!rc) {
-            std::cout << "write failed\n";
+            std::cout << "write failed" << std::endl;
             break;
         }
         // flush every 32k data
@@ -130,7 +130,7 @@ int updater_class::exec(int argc, char *argv[])
 
     // reset target device
     cmd = QString("FW+RST");
-    std::cout << ">> " << cmd.toStdString() << '\n';
+    std::cout << ">> " << cmd.toStdString() << std::endl;
     send_string(&cmd);
     m_device->waitForBytesWritten();
 
