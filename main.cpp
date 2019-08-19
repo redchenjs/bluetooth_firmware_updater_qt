@@ -5,36 +5,58 @@
  *      Author: Jack Chen <redchenjs@live.com>
  */
 
+#include <time.h>
+#include <sys/stat.h>
 #include <QtGlobal>
 #include "updater.h"
 
+#define LOG_FILE_PATH "/tmp/spp-firmware-updater.log"
+#define LOG_FILE_MAX_LEN 2048
+
 void msg_handle(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
-    FILE *fp;
+    FILE *fp = nullptr;
+    struct stat file_stat;
 
-    if (!(fp = fopen("/tmp/spp-firmware-updater.log","w"))) {
-        return;
+    if (!(stat(LOG_FILE_PATH, &file_stat))) {
+        if (file_stat.st_size >= LOG_FILE_MAX_LEN) {
+            fp = fopen(LOG_FILE_PATH, "w+");
+        } else {
+            fp = fopen(LOG_FILE_PATH, "a+");
+        }
+        if (!fp) {
+            return;
+        }
+    } else {
+        if (!(fp = fopen(LOG_FILE_PATH, "w+"))) {
+            return;
+        }
     }
+
+    char time_str[24];
+    time_t lt = time(nullptr);
+    strftime(time_str, sizeof(time_str), "%Y-%m-%d %I:%M", localtime(&lt));
 
     QByteArray localMsg = msg.toLocal8Bit();
-
     switch (type) {
     case QtDebugMsg:
-        fprintf(fp, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+        fprintf(fp, "[%s] Debug: %s (%s:%u, %s)\n", time_str, localMsg.constData(), context.file, context.line, context.function);
         break;
     case QtInfoMsg:
-        fprintf(fp, "Info: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+        fprintf(fp, "[%s] Info: %s (%s:%u, %s)\n", time_str, localMsg.constData(), context.file, context.line, context.function);
         break;
     case QtWarningMsg:
-        fprintf(fp, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+        fprintf(fp, "[%s] Warning: %s (%s:%u, %s)\n", time_str, localMsg.constData(), context.file, context.line, context.function);
         break;
     case QtCriticalMsg:
-        fprintf(fp, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+        fprintf(fp, "[%s] Critical: %s (%s:%u, %s)\n", time_str, localMsg.constData(), context.file, context.line, context.function);
         break;
     case QtFatalMsg:
-        fprintf(fp, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+        fprintf(fp, "[%s] Fatal: %s (%s:%u, %s)\n", time_str, localMsg.constData(), context.file, context.line, context.function);
         abort();
     }
+
+    fclose(fp);
 }
 
 int main(int argc, char *argv[])
