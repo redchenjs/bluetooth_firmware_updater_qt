@@ -102,7 +102,7 @@ int updater_class::exec(int argc, char *argv[])
     send_string(&cmd);
     m_device->waitForBytesWritten();
     while (!m_device_rsp) {
-        QThread::msleep(100);
+        QThread::msleep(50);
         if (!m_device_rsp) {
             m_device->waitForReadyRead();
         }
@@ -116,7 +116,7 @@ int updater_class::exec(int argc, char *argv[])
     send_string(&cmd);
     m_device->waitForBytesWritten();
     while (!m_device_rsp) {
-        QThread::msleep(100);
+        QThread::msleep(50);
         if (!m_device_rsp) {
             m_device->waitForReadyRead();
         }
@@ -134,14 +134,14 @@ int updater_class::exec(int argc, char *argv[])
         // flush every 32k data
         if ((i+1) % 32768 == 0) {
             m_device->waitForBytesWritten();
-            QThread::msleep(1000);
+            QThread::msleep(750);
         }
         std::cout << ">> SENT:" << i*100/filedata.size() << "%\r";
     }
     std::cout << std::endl;
     m_device->waitForBytesWritten();
     while (!m_device_rsp) {
-        QThread::msleep(100);
+        QThread::msleep(50);
         if (!m_device_rsp) {
             m_device->waitForReadyRead();
         }
