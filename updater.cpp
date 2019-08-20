@@ -62,6 +62,9 @@ void updater_class::process_data(void)
     } else if (data.contains("ERROR")) {
         std::cout << "<< ERROR" << std::endl;
         m_device_rsp = 2;
+    } else if (data.contains("LOCKED")) {
+        std::cout << "<< LOCKED" << std::endl;
+        m_device_rsp = 2;
     }
 }
 
