@@ -14,5 +14,5 @@ CONFIG += c++17
 TARGET = spp-firmware-updater
 TEMPLATE = app
 
-SOURCES += main.cpp updater.cpp
-HEADERS += updater.h
+SOURCES += app/main.cpp app/updater.cpp
+HEADERS += app/updater.h
