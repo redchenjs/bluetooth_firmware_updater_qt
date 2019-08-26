@@ -51,7 +51,11 @@ void updater_class::process_data(void)
     QString data = m_device->readAll();
 
     if (data.contains("VER")) {
-        std::cout << "<< " << data.toStdString();
+        if (data.contains("\r\n")) {
+            std::cout << "<< " << data.toStdString();
+        } else {
+            std::cout << "<< " << data.toStdString() << std::endl;
+        }
         m_device_rsp = 1;
     } else if (data.contains("OK")) {
         std::cout << "<< OK" << std::endl;
