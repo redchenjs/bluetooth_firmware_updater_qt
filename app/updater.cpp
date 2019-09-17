@@ -59,18 +59,9 @@ void updater_class::process_data(void)
     std::cout << "<< " << data.toStdString();
 }
 
-int updater_class::exec(int argc, char *argv[])
+int updater_class::open_device(const QString &devname)
 {
-    if (argc != 3) {
-        std::cout << "Usage: " << argv[0] << " /dev/rfcommX firmware.bin" << std::endl;
-        return -1;
-    }
-
-    m_device = new QSerialPort(this);
-    connect(m_device, &QSerialPort::readyRead, this, &updater_class::process_data);
-
-    // open serial device
-    m_device->setPortName(argv[1]);
+    m_device->setPortName(devname);
     if (m_device->open(QIODevice::ReadWrite)) {
         m_device->setBaudRate(115200);
         m_device->setDataBits(QSerialPort::Data8);
@@ -80,16 +71,96 @@ int updater_class::exec(int argc, char *argv[])
         m_device->flush();
     } else {
         std::cout << "could not open device" << std::endl;
-        return -2;
+        return -1;
     }
 
+    return 0;
+}
+
+void updater_class::close_device(void)
+{
+    m_device->clearError();
+    m_device->close();
+}
+
+int updater_class::update_firmware(const QString &devname, QString filename)
+{
+    // open serial device
+    open_device(devname);
+
     // open firmware file
-    QString filename = QString(argv[2]);
     QFile fd(filename);
     if (!fd.open(QIODevice::ReadOnly)) {
         std::cout << "could not open file" << std::endl;
-        return -3;
+        return -1;
     }
+
+    // send update command to target device
+    qint64 filesize = fd.size();
+    QString cmd = QString("FW+UPD:") + cmd.number(filesize);
+    std::cout << ">> " << cmd.toStdString() << std::endl;
+    send_string(&cmd);
+    m_device->waitForBytesWritten();
+    while (m_device_rsp == 0) {
+        QThread::msleep(50);
+        if (m_device_rsp == 0) {
+            m_device->waitForReadyRead();
+        }
+    }
+    // error
+    if (m_device_rsp == 2) {
+        return -2;
+    }
+    m_device_rsp = 0;
+
+    // send firmware data
+    QByteArray filedata = fd.readAll();
+    for (int i=0; i<filedata.size(); i++) {
+        bool rc = send_byte(filedata.at(i));
+        if (!rc) {
+            std::cout << "write failed" << std::endl;
+            return -3;
+        }
+        // flush every 32k data
+        if ((i+1) % 32768 == 0) {
+            m_device->waitForBytesWritten();
+            QThread::msleep(750);
+        }
+        std::cout << ">> SENT:" << i*100/filedata.size() << "%\r";
+    }
+    std::cout << std::endl;
+    m_device->waitForBytesWritten();
+    while (m_device_rsp == 0) {
+        QThread::msleep(50);
+        if (m_device_rsp == 0) {
+            m_device->waitForReadyRead();
+        }
+    }
+    // error
+    if (m_device_rsp == 2) {
+        return -4;
+    }
+    m_device_rsp = 0;
+
+    // reset target device
+    cmd = QString("FW+RST");
+    std::cout << ">> " << cmd.toStdString() << std::endl;
+    send_string(&cmd);
+    m_device->waitForBytesWritten();
+
+    // close firmware file
+    fd.close();
+
+    // close serial device
+    close_device();
+
+    return 0;
+}
+
+void updater_class::get_device_info(const QString &devname)
+{
+    // open serial device
+    open_device(devname);
 
     // get target RAM information
     QString cmd = QString("FW+RAM?");
@@ -117,65 +188,61 @@ int updater_class::exec(int argc, char *argv[])
     }
     m_device_rsp = 0;
 
-    // send update command to target device
-    qint64 filesize = fd.size();
-    cmd = QString("FW+UPD:") + cmd.number(filesize);
-    std::cout << ">> " << cmd.toStdString() << std::endl;
-    send_string(&cmd);
-    m_device->waitForBytesWritten();
-    while (m_device_rsp == 0) {
-        QThread::msleep(50);
-        if (m_device_rsp == 0) {
-            m_device->waitForReadyRead();
-        }
-    }
-    // error
-    if (m_device_rsp == 2) {
-        return -4;
-    }
-    m_device_rsp = 0;
+    // close serial device
+    close_device();
+}
 
-    // send firmware data
-    QByteArray filedata = fd.readAll();
-    for (int i=0; i<filedata.size(); i++) {
-        bool rc = send_byte(filedata.at(i));
-        if (!rc) {
-            std::cout << "write failed" << std::endl;
-            return -5;
-        }
-        // flush every 32k data
-        if ((i+1) % 32768 == 0) {
-            m_device->waitForBytesWritten();
-            QThread::msleep(750);
-        }
-        std::cout << ">> SENT:" << i*100/filedata.size() << "%\r";
-    }
-    std::cout << std::endl;
-    m_device->waitForBytesWritten();
-    while (m_device_rsp == 0) {
-        QThread::msleep(50);
-        if (m_device_rsp == 0) {
-            m_device->waitForReadyRead();
-        }
-    }
-    // error
-    if (m_device_rsp == 2) {
-        return -6;
-    }
-    m_device_rsp = 0;
+void updater_class::reset_device(const QString &devname)
+{
+    // open serial device
+    open_device(devname);
 
     // reset target device
-    cmd = QString("FW+RST");
+    QString cmd = QString("FW+RST");
     std::cout << ">> " << cmd.toStdString() << std::endl;
     send_string(&cmd);
     m_device->waitForBytesWritten();
 
-    // close firmware file
-    fd.close();
-
     // close serial device
-    m_device->clearError();
-    m_device->close();
+    close_device();
+}
 
-    return 0;
+void updater_class::print_usage(void)
+{
+    std::cout << "Usage:" << std::endl;
+    std::cout << "\tspp-firmware-updater /dev/rfcommX [OPTIONS]\n" << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << "\t-u [firmware.bin]\tupdate device firmware with [firmware.bin]" << std::endl;
+    std::cout << "\t-r\t\t\treset device immediately" << std::endl;
+    std::cout << "\t-i\t\t\tget device information" << std::endl;
+}
+
+int updater_class::exec(int argc, char *argv[])
+{
+    int res = 0;
+
+    if (argc < 3) {
+        print_usage();
+        return -1;
+    }
+
+    m_device = new QSerialPort(this);
+    connect(m_device, &QSerialPort::readyRead, this, &updater_class::process_data);
+
+    QString devname = QString(argv[1]);
+    QString options = QString(argv[2]);
+
+    if (options == "-i") {
+        get_device_info(devname);
+    } else if (options == "-r") {
+        reset_device(devname);
+    } else if (options == "-u") {
+        QString filename = QString(argv[3]);
+        res = update_firmware(devname, filename);
+    } else {
+        print_usage();
+        return -1;
+    }
+
+    return res;
 }

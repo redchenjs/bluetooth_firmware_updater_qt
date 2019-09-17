@@ -26,6 +26,15 @@ private:
     bool send_string(QString *s);
 
     void process_data(void);
+
+    int open_device(const QString &devname);
+    void close_device(void);
+
+    int update_firmware(const QString &devname, QString filename);
+    void get_device_info(const QString &devname);
+    void reset_device(const QString &devname);
+
+    void print_usage(void);
 };
 
 #endif // UPDATER_H
