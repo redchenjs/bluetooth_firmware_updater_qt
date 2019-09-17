@@ -50,26 +50,13 @@ void updater_class::process_data(void)
 {
     QString data = m_device->readAll();
 
-    if (data.contains("VER")) {
-        if (data.contains("\r\n")) {
-            std::cout << "<< " << data.toStdString();
-        } else {
-            std::cout << "<< " << data.toStdString() << std::endl;
-        }
+    if (data.contains("RAM:") || data.contains("VER:") || data.contains("OK") || data.contains("DONE")) {
         m_device_rsp = 1;
-    } else if (data.contains("OK")) {
-        std::cout << "<< OK" << std::endl;
-        m_device_rsp = 1;
-    } else if (data.contains("DONE")) {
-        std::cout << "<< DONE" << std::endl;
-        m_device_rsp = 1;
-    } else if (data.contains("ERROR")) {
-        std::cout << "<< ERROR" << std::endl;
-        m_device_rsp = 2;
-    } else if (data.contains("LOCKED")) {
-        std::cout << "<< LOCKED" << std::endl;
+    } else if (data.contains("ERROR") || data.contains("LOCKED")) {
         m_device_rsp = 2;
     }
+
+    std::cout << "<< " << data.toStdString();
 }
 
 int updater_class::exec(int argc, char *argv[])
@@ -104,8 +91,21 @@ int updater_class::exec(int argc, char *argv[])
         return -3;
     }
 
+    // get target RAM information
+    QString cmd = QString("FW+RAM?");
+    std::cout << ">> " << cmd.toStdString() << std::endl;
+    send_string(&cmd);
+    m_device->waitForBytesWritten();
+    while (m_device_rsp == 0) {
+        QThread::msleep(50);
+        if (m_device_rsp == 0) {
+            m_device->waitForReadyRead();
+        }
+    }
+    m_device_rsp = 0;
+
     // get target firmware version
-    QString cmd = QString("FW+VER?");
+    cmd = QString("FW+VER?");
     std::cout << ">> " << cmd.toStdString() << std::endl;
     send_string(&cmd);
     m_device->waitForBytesWritten();
