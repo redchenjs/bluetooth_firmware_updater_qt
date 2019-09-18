@@ -216,11 +216,11 @@ int updater_class::reset_device(const QString &devname)
 void updater_class::print_usage(void)
 {
     std::cout << "Usage:" << std::endl;
-    std::cout << "\tspp-firmware-updater /dev/rfcommX [OPTIONS]\n" << std::endl;
+    std::cout << "    spp-firmware-updater /dev/rfcommX [OPTIONS]\n" << std::endl;
     std::cout << "Options:" << std::endl;
-    std::cout << "\t-u [firmware.bin]\tupdate device firmware with [firmware.bin]" << std::endl;
-    std::cout << "\t-r\t\t\treset device immediately" << std::endl;
-    std::cout << "\t-i\t\t\tget device information" << std::endl;
+    std::cout << "    -u [firmware.bin]\tupdate device firmware with [firmware.bin]" << std::endl;
+    std::cout << "    -r\t\t\treset device immediately" << std::endl;
+    std::cout << "    -i\t\t\tget device information" << std::endl;
 }
 
 int updater_class::exec(int argc, char *argv[])
