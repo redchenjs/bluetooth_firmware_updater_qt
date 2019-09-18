@@ -77,16 +77,20 @@ int updater_class::open_device(const QString &devname)
     return 0;
 }
 
-void updater_class::close_device(void)
+int updater_class::close_device(void)
 {
     m_device->clearError();
     m_device->close();
+
+    return 0;
 }
 
 int updater_class::update_firmware(const QString &devname, QString filename)
 {
     // open serial device
-    open_device(devname);
+    if (open_device(devname)) {
+        return -1;
+    }
 
     // open firmware file
     QFile fd(filename);
@@ -152,15 +156,15 @@ int updater_class::update_firmware(const QString &devname, QString filename)
     fd.close();
 
     // close serial device
-    close_device();
-
-    return 0;
+    return close_device();
 }
 
-void updater_class::get_device_info(const QString &devname)
+int updater_class::get_device_info(const QString &devname)
 {
     // open serial device
-    open_device(devname);
+    if (open_device(devname)) {
+        return -1;
+    }
 
     // get target RAM information
     QString cmd = QString("FW+RAM?");
@@ -189,13 +193,15 @@ void updater_class::get_device_info(const QString &devname)
     m_device_rsp = 0;
 
     // close serial device
-    close_device();
+    return close_device();
 }
 
-void updater_class::reset_device(const QString &devname)
+int updater_class::reset_device(const QString &devname)
 {
     // open serial device
-    open_device(devname);
+    if (open_device(devname)) {
+        return -1;
+    }
 
     // reset target device
     QString cmd = QString("FW+RST");
@@ -204,7 +210,7 @@ void updater_class::reset_device(const QString &devname)
     m_device->waitForBytesWritten();
 
     // close serial device
-    close_device();
+    return close_device();
 }
 
 void updater_class::print_usage(void)
@@ -233,9 +239,9 @@ int updater_class::exec(int argc, char *argv[])
     QString options = QString(argv[2]);
 
     if (options == "-i") {
-        get_device_info(devname);
+        res = get_device_info(devname);
     } else if (options == "-r") {
-        reset_device(devname);
+        res = reset_device(devname);
     } else if (options == "-u") {
         QString filename = QString(argv[3]);
         res = update_firmware(devname, filename);
