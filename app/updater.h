@@ -19,8 +19,8 @@ public:
     int exec(int argc, char *argv[]);
 
 private:
-    QSerialPort *m_device;
-    size_t m_device_rsp;
+    QSerialPort *m_device = nullptr;
+    size_t m_device_rsp = 0;
 
     bool send_byte(const char c);
     bool send_string(QString *s);
