@@ -87,16 +87,18 @@ int updater_class::close_device(void)
 
 int updater_class::update_firmware(const QString &devname, QString filename)
 {
-    // open serial device
-    if (open_device(devname)) {
-        return -1;
-    }
-
     // open firmware file
     QFile fd(filename);
     if (!fd.open(QIODevice::ReadOnly)) {
         std::cout << "could not open file" << std::endl;
         return -2;
+    }
+
+    // open serial device
+    if (open_device(devname)) {
+        // close firmware file
+        fd.close();
+        return -1;
     }
 
     // send update command to target device
@@ -113,6 +115,8 @@ int updater_class::update_firmware(const QString &devname, QString filename)
     }
     // error
     if (m_device_rsp == 2) {
+        // close firmware file
+        fd.close();
         // close serial device
         close_device();
         return -3;
@@ -125,6 +129,8 @@ int updater_class::update_firmware(const QString &devname, QString filename)
         bool rc = send_byte(filedata.at(i));
         if (!rc) {
             std::cout << "write failed" << std::endl;
+            // close firmware file
+            fd.close();
             // close serial device
             close_device();
             return -4;
@@ -146,6 +152,8 @@ int updater_class::update_firmware(const QString &devname, QString filename)
     }
     // error
     if (m_device_rsp == 2) {
+        // close firmware file
+        fd.close();
         // close serial device
         close_device();
         return -3;
