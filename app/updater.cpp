@@ -96,7 +96,7 @@ int updater_class::update_firmware(const QString &devname, QString filename)
     QFile fd(filename);
     if (!fd.open(QIODevice::ReadOnly)) {
         std::cout << "could not open file" << std::endl;
-        return -1;
+        return -2;
     }
 
     // send update command to target device
@@ -113,7 +113,9 @@ int updater_class::update_firmware(const QString &devname, QString filename)
     }
     // error
     if (m_device_rsp == 2) {
-        return -2;
+        // close serial device
+        close_device();
+        return -3;
     }
     m_device_rsp = 0;
 
@@ -123,7 +125,9 @@ int updater_class::update_firmware(const QString &devname, QString filename)
         bool rc = send_byte(filedata.at(i));
         if (!rc) {
             std::cout << "write failed" << std::endl;
-            return -3;
+            // close serial device
+            close_device();
+            return -4;
         }
         // flush every 32k data
         if ((i+1) % 32768 == 0) {
@@ -142,7 +146,9 @@ int updater_class::update_firmware(const QString &devname, QString filename)
     }
     // error
     if (m_device_rsp == 2) {
-        return -4;
+        // close serial device
+        close_device();
+        return -3;
     }
     m_device_rsp = 0;
 
