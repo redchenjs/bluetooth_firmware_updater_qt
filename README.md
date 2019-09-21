@@ -1,6 +1,16 @@
 SPP Firmware Updater
 ====================
 
+## Dependencies
+
+```
+bluez
+cmake
+pkg-config
+qt5-default
+qt5serialport-dev
+```
+
 ## Build
 
 ```
@@ -14,5 +24,22 @@ make
 
 ```
 sudo rfcomm bind hciX XX:XX:XX:XX:XX:XX
-spp-firmware-updater /dev/rfcommX firmware.bin
+```
+
+### Update device firmware
+
+```
+spp-firmware-updater /dev/rfcommX -u firmware.bin
+```
+
+### Get device information
+
+```
+spp-firmware-updater /dev/rfcommX -i
+```
+
+### Reset device
+
+```
+spp-firmware-updater /dev/rfcommX -r
 ```
