@@ -233,7 +233,7 @@ void updater_class::print_usage(void)
     std::cout << "    spp-firmware-updater /dev/rfcommX [OPTIONS]\n" << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "    -u [firmware.bin]\tupdate device firmware with [firmware.bin]" << std::endl;
-    std::cout << "    -r\t\t\treset device immediately" << std::endl;
+    std::cout << "    -r\t\t\tdisable auto reconnect and then reset the device" << std::endl;
     std::cout << "    -i\t\t\tget device information" << std::endl;
 }
 
