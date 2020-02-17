@@ -1,5 +1,7 @@
-SPP Firmware Updater
-====================
+Easy Firmware Updater
+=====================
+
+Firmware update tool for Music Light Cube.
 
 ## Dependencies
 
@@ -29,17 +31,17 @@ sudo rfcomm bind hciX XX:XX:XX:XX:XX:XX
 ### Update device firmware
 
 ```
-spp-firmware-updater /dev/rfcommX -u firmware.bin
-```
-
-### Get device information
-
-```
-spp-firmware-updater /dev/rfcommX -i
+easy-firmware-updater /dev/rfcommX update firmware.bin
 ```
 
 ### Reset device
 
 ```
-spp-firmware-updater /dev/rfcommX -r
+easy-firmware-updater /dev/rfcommX reset
+```
+
+### Get device information
+
+```
+easy-firmware-updater /dev/rfcommX info
 ```

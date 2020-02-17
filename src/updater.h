@@ -11,30 +11,47 @@
 #include <QtCore>
 #include <QtSerialPort/QSerialPort>
 
-class updater_class : public QObject
+#define OK           0
+#define ERR_ARG     -1
+#define ERR_FILE    -2
+#define ERR_DEVICE  -3
+#define ERR_REMOTE  -4
+
+class FirmwareUpdater : public QObject
 {
     Q_OBJECT
 
 public:
-    int exec(int argc, char *argv[]);
+    void stop(void);
+    void start(int argc, char *argv[]);
+
+private slots:
+    void error(QSerialPort::SerialPortError err);
 
 private:
     QSerialPort *m_device = nullptr;
     size_t m_device_rsp = 0;
 
-    bool send_byte(const char c);
-    bool send_string(QString *s);
-
-    void process_data(void);
+    size_t rw_in_progress = 0;
 
     int open_device(const QString &devname);
     int close_device(void);
 
-    int update_firmware(const QString &devname, QString filename);
-    int get_device_info(const QString &devname);
-    int reset_device(const QString &devname);
+    void clear_response(void);
+    size_t check_response(void);
+    size_t wait_for_response(void);
 
-    void print_usage(void);
+    void process_data(void);
+    int send_data(const char *data, uint32_t length);
+
+    int update(const QString &devname, QString filename);
+    int reset(const QString &devname);
+    int info(const QString &devname);
+
+    void print_usage(char *appname);
+
+signals:
+    void finished(int err = OK);
 };
 
 #endif // UPDATER_H
