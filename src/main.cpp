@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 
     QObject::connect(&updater, SIGNAL(finished()), &app, SLOT(quit()));
 
-    QTimer::singleShot(0, &updater, [=]()->void{updater.start(argc, argv);});
+    QTimer::singleShot(0, &updater, [&]()->void{updater.start(argc, argv);});
 
     return app.exec();
 }
