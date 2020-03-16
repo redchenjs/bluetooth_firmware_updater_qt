@@ -1,16 +1,15 @@
-Easy Firmware Updater
-=====================
+Bluetooth Firmware Updater
+==========================
 
 Firmware update tool for Music Light Cube.
 
 ## Dependencies
 
 ```
-bluez
 cmake
 pkg-config
 qt5-default
-qt5serialport-dev
+qt5connectivity-dev
 ```
 
 ## Build
@@ -24,24 +23,20 @@ make
 
 ## Usage
 
-```
-sudo rfcomm bind hciX XX:XX:XX:XX:XX:XX
-```
-
 ### Update device firmware
 
 ```
-easy-firmware-updater /dev/rfcommX update firmware.bin
+btfwupd BD_ADDR update firmware.bin
 ```
 
 ### Reset device
 
 ```
-easy-firmware-updater /dev/rfcommX reset
+btfwupd BD_ADDR reset
 ```
 
 ### Get device information
 
 ```
-easy-firmware-updater /dev/rfcommX info
+btfwupd BD_ADDR info
 ```
