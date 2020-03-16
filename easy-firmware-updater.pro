@@ -7,7 +7,7 @@
 #
 #-------------------------------------------------
 
-QT += core serialport
+QT += core bluetooth
 
 CONFIG += c++17
 
