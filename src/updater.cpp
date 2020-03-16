@@ -55,28 +55,38 @@ void FirmwareUpdater::sendData(void)
 
     if (data_remain == 0) {
         std::cout << ">> SENT:100%\r";
-        disconnect(m_device, SIGNAL(bytesWritten(qint64)), this, SLOT(sendData()));
+
         data_fd->close();
+
+        disconnect(m_device, SIGNAL(bytesWritten(qint64)), this, SLOT(sendData()));
     } else {
         std::cout << ">> SENT:" << data_done*100/data_size << "%\r";
 
         if (data_remain >= sizeof(read_buff)) {
             if (data_fd->read(read_buff, sizeof(read_buff)) != sizeof(read_buff)) {
                 std::cout << std::endl << "== ERROR" << std::endl;
+
                 data_fd->close();
+
                 emit finished(ERR_FILE);
                 return;
             }
+
             m_device->write(read_buff, sizeof(read_buff));
+
             data_done += sizeof(read_buff);
         } else {
             if (data_fd->read(read_buff, data_remain) != data_remain) {
                 std::cout << std::endl << "== ERROR" << std::endl;
+
                 data_fd->close();
+
                 emit finished(ERR_FILE);
                 return;
             }
+
             m_device->write(read_buff, data_remain);
+
             data_done += data_remain;
         }
 
@@ -102,6 +112,7 @@ void FirmwareUpdater::processData(void)
                 std::cout << std::endl;
             }
             std::cout << "<= " << recv_buff;
+
             if (rsp_fmt[i].flag == true) {
                 if (m_cmd_idx == CMD_IDX_UPD) {
                     if (rw_in_progress == RW_NONE) {
@@ -122,6 +133,7 @@ void FirmwareUpdater::processData(void)
             } else {
                 emit finished(ERR_REMOTE);
             }
+
             return;
         }
     }
