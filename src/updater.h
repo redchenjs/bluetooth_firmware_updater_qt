@@ -27,7 +27,7 @@ class FirmwareUpdater: public QObject
     Q_OBJECT
 
 public:
-    void stop(void);
+    void stop(int err = OK);
     void start(int argc, char *argv[]);
 
 private slots:
