@@ -68,7 +68,7 @@ void FirmwareUpdater::sendData(void)
 
                 data_fd->close();
 
-                stop(ERR_FILE);
+                emit finished(ERR_FILE);
                 return;
             }
 
@@ -81,7 +81,7 @@ void FirmwareUpdater::sendData(void)
 
                 data_fd->close();
 
-                stop(ERR_FILE);
+                emit finished(ERR_FILE);
                 return;
             }
 
@@ -131,7 +131,7 @@ void FirmwareUpdater::processData(void)
                     }
                 }
             } else {
-                stop(ERR_REMOTE);
+                emit finished(ERR_REMOTE);
             }
 
             return;
@@ -147,7 +147,7 @@ void FirmwareUpdater::processData(void)
         sendCommand();
     } else {
         std::cout << "<= " << recv_buff;
-        stop();
+        emit finished(OK);
     }
 }
 
@@ -163,7 +163,7 @@ void FirmwareUpdater::processError(void)
         }
     }
 
-    stop(ERR_ABORT);
+    stop();
 }
 
 void FirmwareUpdater::printUsage(void)
@@ -175,20 +175,16 @@ void FirmwareUpdater::printUsage(void)
     std::cout << "    reset\t\t\tdisable auto reconnect and then reset the device" << std::endl;
     std::cout << "    info\t\t\tget device information" << std::endl;
 
-    stop(ERR_ARG);
+    emit finished(ERR_ARG);
 }
 
-void FirmwareUpdater::stop(int err)
+void FirmwareUpdater::stop(void)
 {
     if (rw_in_progress != RW_NONE) {
         std::cout << std::endl;
     }
 
-    if (err != OK) {
-        m_device->abort();
-    }
-
-    emit finished(err);
+    emit finished(ERR_ABORT);
 }
 
 void FirmwareUpdater::start(int argc, char *argv[])
@@ -209,7 +205,7 @@ void FirmwareUpdater::start(int argc, char *argv[])
         data_fd = new QFile(m_arg[3]);
         if (!data_fd->open(QIODevice::ReadOnly)) {
             std::cout << "Could not open file" << std::endl;
-            stop(ERR_FILE);
+            emit finished(ERR_FILE);
             return;
         }
 
