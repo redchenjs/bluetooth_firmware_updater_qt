@@ -153,7 +153,7 @@ void FirmwareUpdater::processData(void)
 
 void FirmwareUpdater::processError(void)
 {
-    if (m_cmd_idx == CMD_IDX_RST) {
+    if (m_cmd_idx == CMD_IDX_RST && m_device->error() == QBluetoothSocket::NoSocketError) {
         std::cout << "== OK" << std::endl;
     } else {
         if (rw_in_progress != RW_NONE) {
@@ -169,7 +169,7 @@ void FirmwareUpdater::processError(void)
 void FirmwareUpdater::printUsage(void)
 {
     std::cout << "Usage:" << std::endl;
-    std::cout << "    " << m_arg[0] << " BD_ADDR COMMAND\n" << std::endl;
+    std::cout << "    " << m_arg[0] << " BD_ADDR COMMAND" << std::endl << std::endl;
     std::cout << "Commands:" << std::endl;
     std::cout << "    update [firmware.bin]\tupdate device firmware with [firmware.bin]" << std::endl;
     std::cout << "    reset\t\t\tdisable auto reconnect and then reset the device" << std::endl;
