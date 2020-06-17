@@ -11,7 +11,7 @@ set(CMAKE_AUTORCC ON)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Bluetooth REQUIRED)
 
-set(SOURCES src/main.cpp src/updater.cpp)
+set(SOURCES src/main.cpp src/fwupd.cpp)
 add_executable(${TARGET_NAME} ${SOURCES})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")

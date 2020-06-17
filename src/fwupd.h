@@ -1,12 +1,12 @@
 /*
- * updater.h
+ * fwupd.h
  *
  *  Created on: 2019-08-18 19:00
  *      Author: Jack Chen <redchenjs@live.com>
  */
 
-#ifndef UPDATER_H
-#define UPDATER_H
+#ifndef FWUPD_H
+#define FWUPD_H
 
 #include <QtCore>
 #include <QtBluetooth>
@@ -57,4 +57,4 @@ signals:
     void finished(int err = OK);
 };
 
-#endif // UPDATER_H
+#endif // FWUPD_H

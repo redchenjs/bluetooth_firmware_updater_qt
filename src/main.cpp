@@ -6,18 +6,20 @@
  */
 
 #include <csignal>
+
+#include <QtCore>
 #include <QtGlobal>
 
-#include "updater.h"
+#include "fwupd.h"
 
-static FirmwareUpdater updater;
+static FirmwareUpdater fwupd;
 
 void signalHandle(int signum)
 {
     switch (signum) {
     case SIGINT:
     case SIGTERM:
-        updater.stop();
+        fwupd.stop();
         break;
     default:
         break;
@@ -31,9 +33,9 @@ int main(int argc, char *argv[])
     signal(SIGINT, signalHandle);
     signal(SIGTERM, signalHandle);
 
-    QObject::connect(&updater, SIGNAL(finished()), &app, SLOT(quit()));
+    QObject::connect(&fwupd, SIGNAL(finished()), &app, SLOT(quit()));
 
-    QTimer::singleShot(0, &updater, [&]()->void{updater.start(argc, argv);});
+    QTimer::singleShot(0, &fwupd, [&]()->void{fwupd.start(argc, argv);});
 
     return app.exec();
 }

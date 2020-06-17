@@ -14,5 +14,5 @@ CONFIG += c++17
 TARGET = btfwupd
 TEMPLATE = app
 
-SOURCES += src/main.cpp src/updater.cpp
-HEADERS += src/updater.h
+SOURCES += src/main.cpp src/fwupd.cpp
+HEADERS += src/fwupd.h

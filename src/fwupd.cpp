@@ -1,5 +1,5 @@
 /*
- * updater.cpp
+ * fwupd.cpp
  *
  *  Created on: 2019-08-18 19:00
  *      Author: Jack Chen <redchenjs@live.com>
@@ -12,7 +12,7 @@
 #include <QtCore>
 #include <QtBluetooth>
 
-#include "updater.h"
+#include "fwupd.h"
 
 #define CMD_FMT_UPD "FW+UPD:%u"
 #define CMD_FMT_RST "FW+RST!"
