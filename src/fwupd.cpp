@@ -14,6 +14,11 @@
 
 #include "fwupd.h"
 
+#define OTA_SRV_UUID  0xFF52
+#define OTA_CHAR_UUID 0x5201
+
+#define TX_BUF_SIZE 512
+
 #define CMD_FMT_UPD "FW+UPD:%u"
 #define CMD_FMT_RST "FW+RST!"
 #define CMD_FMT_RAM "FW+RAM?"
@@ -44,53 +49,38 @@ static const rsp_fmt_t rsp_fmt[] = {
     { false, "ERROR\r\n" },  // Error
 };
 
+void FirmwareUpdater::printUsage(void)
+{
+    std::cout << "Usage:" << std::endl;
+    std::cout << "    " << m_arg[0] << " BD_ADDR COMMAND" << std::endl << std::endl;
+    std::cout << "Commands:" << std::endl;
+    std::cout << "    update [firmware.bin]\tupdate device firmware with [firmware.bin]" << std::endl;
+    std::cout << "    reset\t\t\tdisable auto reconnect and then reset the device" << std::endl;
+    std::cout << "    info\t\t\tget device information" << std::endl;
+
+    stop(ERR_ARG);
+}
+
 void FirmwareUpdater::sendData(void)
 {
-    char read_buff[990] = {0};
     uint32_t data_remain = data_size - data_done;
-
-    if (m_device->bytesToWrite() != 0) {
-        return;
-    }
+    uint32_t read_length = (data_remain >= TX_BUF_SIZE) ? TX_BUF_SIZE : data_remain;
 
     if (data_remain == 0) {
         std::cout << ">> SENT:100%\r";
 
         data_fd->close();
 
-        disconnect(m_device, SIGNAL(bytesWritten(qint64)), this, SLOT(sendData()));
+        disconnect(data_tim, SIGNAL(timeout()));
+
+        data_tim->stop();
     } else {
         std::cout << ">> SENT:" << data_done*100/data_size << "%\r";
 
-        if (data_remain >= sizeof(read_buff)) {
-            if (data_fd->read(read_buff, sizeof(read_buff)) != sizeof(read_buff)) {
-                std::cout << std::endl << "== ERROR" << std::endl;
+        QByteArray read_buff = data_fd->read(read_length);
+        m_service->writeCharacteristic(m_characteristic, read_buff, QLowEnergyService::WriteWithoutResponse);
 
-                data_fd->close();
-
-                emit finished(ERR_FILE);
-                return;
-            }
-
-            m_device->write(read_buff, sizeof(read_buff));
-
-            data_done += sizeof(read_buff);
-        } else {
-            if (data_fd->read(read_buff, data_remain) != data_remain) {
-                std::cout << std::endl << "== ERROR" << std::endl;
-
-                data_fd->close();
-
-                emit finished(ERR_FILE);
-                return;
-            }
-
-            m_device->write(read_buff, data_remain);
-
-            data_done += data_remain;
-        }
-
-        QThread::msleep(20);
+        data_done += read_length;
     }
 }
 
@@ -98,13 +88,17 @@ void FirmwareUpdater::sendCommand(void)
 {
     std::cout << "=> " << m_cmd_str;
 
-    m_device->write(m_cmd_str, static_cast<uint32_t>(strlen(m_cmd_str)));
+    m_service->writeCharacteristic(m_characteristic, m_cmd_str, QLowEnergyService::WriteWithoutResponse);
 }
 
-void FirmwareUpdater::processData(void)
+void FirmwareUpdater::processData(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
-    QByteArray recv = m_device->readAll();
-    char *recv_buff = recv.data();
+    Q_UNUSED(c);
+    const char *recv_buff = value.data();
+
+    if (!value.contains("\r\n")) {
+        return;
+    }
 
     for (uint8_t i=0; i<sizeof(rsp_fmt)/sizeof(rsp_fmt_t); i++) {
         if (strncmp(recv_buff, rsp_fmt[i].fmt, strlen(rsp_fmt[i].fmt)) == 0) {
@@ -118,9 +112,9 @@ void FirmwareUpdater::processData(void)
                     if (rw_in_progress == RW_NONE) {
                         rw_in_progress = RW_WRITE;
 
-                        connect(m_device, SIGNAL(bytesWritten(qint64)), this, SLOT(sendData()));
+                        connect(data_tim, &QTimer::timeout, this, [&]()->void{this->sendData();});
 
-                        sendData();
+                        data_tim->start(10);
                     } else {
                         rw_in_progress = RW_NONE;
 
@@ -131,7 +125,9 @@ void FirmwareUpdater::processData(void)
                     }
                 }
             } else {
-                emit finished(ERR_REMOTE);
+                rw_in_progress = RW_ERROR;
+
+                stop(ERR_REMOTE);
             }
 
             return;
@@ -147,44 +143,126 @@ void FirmwareUpdater::processData(void)
         sendCommand();
     } else {
         std::cout << "<= " << recv_buff;
-        emit finished(OK);
+
+        stop(OK);
     }
 }
 
-void FirmwareUpdater::processError(void)
+void FirmwareUpdater::deviceDiscovered(const QBluetoothDeviceInfo &device)
 {
-    if (m_cmd_idx == CMD_IDX_RST && m_device->error() == QBluetoothSocket::NoSocketError) {
-        std::cout << "== OK" << std::endl;
-    } else {
-        if (rw_in_progress != RW_NONE) {
-            std::cout << std::endl << "== ERROR";
-        } else {
-            std::cout << "== ERROR" << std::endl;
+    if (device.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration) {
+        if (device.address() == m_device_address) {
+            m_device = device;
+            m_device_found = true;
+
+            m_device_discovery_agent->stop();
         }
     }
-
-    stop();
 }
 
-void FirmwareUpdater::printUsage(void)
+void FirmwareUpdater::deviceDiscoveryFinished(void)
 {
-    std::cout << "Usage:" << std::endl;
-    std::cout << "    " << m_arg[0] << " BD_ADDR COMMAND" << std::endl << std::endl;
-    std::cout << "Commands:" << std::endl;
-    std::cout << "    update [firmware.bin]\tupdate device firmware with [firmware.bin]" << std::endl;
-    std::cout << "    reset\t\t\tdisable auto reconnect and then reset the device" << std::endl;
-    std::cout << "    info\t\t\tget device information" << std::endl;
+    if (m_device_found) {
+        m_control = QLowEnergyController::createCentral(m_device, this);
 
-    emit finished(ERR_ARG);
+        connect(m_control, &QLowEnergyController::connected, this, [&]()->void{m_control->discoverServices();});
+        connect(m_control, SIGNAL(serviceDiscovered(QBluetoothUuid)), this, SLOT(serviceDiscovered(QBluetoothUuid)));
+        connect(m_control, SIGNAL(discoveryFinished()), this, SLOT(serviceDiscoveryFinished()));
+        connect(m_control, SIGNAL(disconnected()), this, SLOT(processRemoteError()));
+        connect(m_control, SIGNAL(error(QLowEnergyController::Error)), this, SLOT(processDeviceError()));
+
+        m_control->connectToDevice();
+    } else {
+        processDeviceError();
+    }
 }
 
-void FirmwareUpdater::stop(void)
+void FirmwareUpdater::serviceDiscovered(const QBluetoothUuid &service)
 {
-    if (rw_in_progress != RW_NONE) {
+    if (service == QBluetoothUuid((QBluetoothUuid::ServiceClassUuid)OTA_SRV_UUID)) {
+        m_service_found = true;
+    }
+}
+
+void FirmwareUpdater::serviceDiscoveryFinished(void)
+{
+    if (m_service_found) {
+        m_service = m_control->createServiceObject(QBluetoothUuid((QBluetoothUuid::ServiceClassUuid)OTA_SRV_UUID), this);
+
+        if (m_service) {
+            connect(m_service, SIGNAL(stateChanged(QLowEnergyService::ServiceState)), this, SLOT(serviceStateChanged(QLowEnergyService::ServiceState)));
+            connect(m_service, SIGNAL(characteristicChanged(QLowEnergyCharacteristic, QByteArray)), this, SLOT(processData(QLowEnergyCharacteristic, QByteArray)));
+            connect(m_service, SIGNAL(descriptorWritten(QLowEnergyDescriptor, QByteArray)), this, SLOT(sendCommand()));
+            connect(m_service, SIGNAL(error(QLowEnergyService::ServiceError)), this, SLOT(processRemoteError()));
+
+            m_service->discoverDetails();
+        }
+    } else {
+        processRemoteError();
+    }
+}
+
+void FirmwareUpdater::serviceStateChanged(QLowEnergyService::ServiceState s)
+{
+    switch (s) {
+    case QLowEnergyService::DiscoveringServices:
+        break;
+    case QLowEnergyService::ServiceDiscovered: {
+        m_characteristic = m_service->characteristic(QBluetoothUuid((QBluetoothUuid::CharacteristicType)OTA_CHAR_UUID));
+        if (!m_characteristic.isValid()) {
+            break;
+        }
+
+        m_descriptor = m_characteristic.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
+        if (m_descriptor.isValid()) {
+            m_service->writeDescriptor(m_descriptor, QByteArray::fromHex("0100"));
+        }
+
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void FirmwareUpdater::processDeviceError(void)
+{
+    stop(ERR_DEVICE);
+}
+
+void FirmwareUpdater::processRemoteError(void)
+{
+    stop(ERR_REMOTE);
+}
+
+void FirmwareUpdater::stop(int err)
+{
+    if (rw_in_progress == RW_WRITE) {
         std::cout << std::endl;
+
+        data_tim->stop();
     }
 
-    emit finished(ERR_ABORT);
+    switch (err) {
+    case ERR_DEVICE:
+        std::cout << ">! ERROR" << std::endl;
+        break;
+    case ERR_REMOTE:
+        if (m_cmd_idx == CMD_IDX_RST) {
+            std::cout << "<= OK" << std::endl;
+        } else if (rw_in_progress != RW_ERROR) {
+            std::cout << "!< ERROR" << std::endl;
+        }
+        break;
+    default:
+        break;
+    }
+
+    if (m_control) {
+        m_control->disconnectFromDevice();
+    }
+
+    emit finished(err);
 }
 
 void FirmwareUpdater::start(int argc, char *argv[])
@@ -192,41 +270,42 @@ void FirmwareUpdater::start(int argc, char *argv[])
     m_arg = argv;
     std::cout << std::unitbuf;
 
-    QBluetoothAddress bdaddr = QBluetoothAddress(m_arg[1]);
     QString command = QString(m_arg[2]);
-
-    m_device = new QBluetoothSocket(QBluetoothServiceInfo::RfcommProtocol, this);
-    connect(m_device, SIGNAL(connected()), this, SLOT(sendCommand()));
-    connect(m_device, SIGNAL(readyRead()), this, SLOT(processData()));
-    connect(m_device, SIGNAL(disconnected()), this, SLOT(processError()));
-    connect(m_device, SIGNAL(error(QBluetoothSocket::SocketError)), this, SLOT(processError()));
 
     if (command == "update" && argc == 4) {
         data_fd = new QFile(m_arg[3]);
         if (!data_fd->open(QIODevice::ReadOnly)) {
             std::cout << "Could not open file" << std::endl;
-            emit finished(ERR_FILE);
+
+            stop(ERR_FILE);
             return;
         }
+
+        data_tim = new QTimer(this);
 
         data_size = static_cast<uint32_t>(data_fd->size());
         data_done = 0;
 
         m_cmd_idx = CMD_IDX_UPD;
         snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_UPD"\r\n", data_size);
-
-        m_device->connectToService(bdaddr, QBluetoothUuid::SerialPort);
     } else if (command == "reset" && argc == 3) {
         m_cmd_idx = CMD_IDX_RST;
         snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_RST"\r\n");
-
-        m_device->connectToService(bdaddr, QBluetoothUuid::SerialPort);
     } else if (command == "info" && argc == 3) {
         m_cmd_idx = CMD_IDX_RAM;
         snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_RAM"\r\n");
-
-        m_device->connectToService(bdaddr, QBluetoothUuid::SerialPort);
     } else {
         printUsage();
     }
+
+    m_device_address = QBluetoothAddress(m_arg[1]);
+    m_device_discovery_agent = new QBluetoothDeviceDiscoveryAgent(this);
+    m_device_discovery_agent->setLowEnergyDiscoveryTimeout(5000);
+
+    connect(m_device_discovery_agent, SIGNAL(deviceDiscovered(QBluetoothDeviceInfo)), this, SLOT(deviceDiscovered(QBluetoothDeviceInfo)));
+    connect(m_device_discovery_agent, SIGNAL(finished()), this, SLOT(deviceDiscoveryFinished()));
+    connect(m_device_discovery_agent, SIGNAL(canceled()), this, SLOT(deviceDiscoveryFinished()));
+    connect(m_device_discovery_agent, SIGNAL(error(QBluetoothDeviceDiscoveryAgent::Error)), this, SLOT(processDeviceError()));
+
+    m_device_discovery_agent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 }

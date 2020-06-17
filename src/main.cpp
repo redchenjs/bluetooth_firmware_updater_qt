@@ -6,6 +6,7 @@
  */
 
 #include <csignal>
+#include <iostream>
 
 #include <QtCore>
 #include <QtGlobal>
@@ -19,7 +20,7 @@ void signalHandle(int signum)
     switch (signum) {
     case SIGINT:
     case SIGTERM:
-        fwupd.stop();
+        fwupd.stop(ERR_ABORT);
         break;
     default:
         break;
