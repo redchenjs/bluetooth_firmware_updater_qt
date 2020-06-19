@@ -53,7 +53,7 @@ private:
     uint32_t data_size = 0;
     uint32_t data_done = 0;
 
-    size_t rw_in_progress = RW_NONE;
+    size_t rw_state = RW_NONE;
 
     void printUsage(void);
 

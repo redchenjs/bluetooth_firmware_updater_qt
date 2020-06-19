@@ -70,10 +70,9 @@ void FirmwareUpdater::sendData(void)
         std::cout << ">> SENT:100%\r";
 
         data_fd->close();
+        data_tim->stop();
 
         disconnect(data_tim, SIGNAL(timeout()));
-
-        data_tim->stop();
     } else {
         std::cout << ">> SENT:" << data_done*100/data_size << "%\r";
 
@@ -102,21 +101,21 @@ void FirmwareUpdater::processData(const QLowEnergyCharacteristic &c, const QByte
 
     for (uint8_t i=0; i<sizeof(rsp_fmt)/sizeof(rsp_fmt_t); i++) {
         if (strncmp(recv_buff, rsp_fmt[i].fmt, strlen(rsp_fmt[i].fmt)) == 0) {
-            if (rw_in_progress != RW_NONE) {
+            if (rw_state == RW_WRITE) {
                 std::cout << std::endl;
             }
             std::cout << "<= " << recv_buff;
 
             if (rsp_fmt[i].flag == true) {
                 if (m_cmd_idx == CMD_IDX_UPD) {
-                    if (rw_in_progress == RW_NONE) {
-                        rw_in_progress = RW_WRITE;
+                    if (rw_state == RW_NONE) {
+                        rw_state = RW_WRITE;
 
                         connect(data_tim, &QTimer::timeout, this, [&]()->void{this->sendData();});
 
                         data_tim->start(10);
                     } else {
-                        rw_in_progress = RW_NONE;
+                        rw_state = RW_NONE;
 
                         m_cmd_idx = CMD_IDX_RST;
                         snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_RST"\r\n");
@@ -125,7 +124,7 @@ void FirmwareUpdater::processData(const QLowEnergyCharacteristic &c, const QByte
                     }
                 }
             } else {
-                rw_in_progress = RW_ERROR;
+                rw_state = RW_ERROR;
 
                 stop(ERR_REMOTE);
             }
@@ -237,7 +236,7 @@ void FirmwareUpdater::processRemoteError(void)
 
 void FirmwareUpdater::stop(int err)
 {
-    if (rw_in_progress == RW_WRITE) {
+    if (rw_state == RW_WRITE) {
         std::cout << std::endl;
 
         data_tim->stop();
@@ -250,7 +249,7 @@ void FirmwareUpdater::stop(int err)
     case ERR_REMOTE:
         if (m_cmd_idx == CMD_IDX_RST) {
             std::cout << "<= OK" << std::endl;
-        } else if (rw_in_progress != RW_ERROR) {
+        } else if (rw_state != RW_ERROR) {
             std::cout << "!< ERROR" << std::endl;
         }
         break;
