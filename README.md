@@ -1,7 +1,7 @@
 Bluetooth Firmware Updater
 ==========================
 
-Firmware update tool for Music Light Cube.
+Bluetooth Firmware Updater using BLE GATT profile.
 
 ## Dependencies
 
