@@ -6,7 +6,6 @@
  */
 
 #include <csignal>
-#include <iostream>
 
 #include <QtCore>
 #include <QtGlobal>
@@ -14,6 +13,13 @@
 #include "fwupd.h"
 
 static FirmwareUpdater fwupd;
+
+void messageHandle(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    Q_UNUSED(type);
+    Q_UNUSED(context);
+    Q_UNUSED(msg);
+}
 
 void signalHandle(int signum)
 {
@@ -30,6 +36,8 @@ void signalHandle(int signum)
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
+
+    qInstallMessageHandler(messageHandle);
 
     signal(SIGINT, signalHandle);
     signal(SIGTERM, signalHandle);
