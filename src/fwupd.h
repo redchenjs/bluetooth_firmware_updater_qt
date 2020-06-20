@@ -15,13 +15,14 @@
 #define ERR_ARG     -1
 #define ERR_FILE    -2
 #define ERR_ABORT   -3
-#define ERR_DEVICE  -4
-#define ERR_REMOTE  -5
+#define ERR_SCAN    -4
+#define ERR_LINK    -5
+#define ERR_DEVICE  -6
+#define ERR_SERVICE -7
 
 #define RW_NONE     0
 #define RW_READ     1
 #define RW_WRITE    2
-#define RW_ERROR    3
 
 class FirmwareUpdater: public QObject
 {
@@ -58,18 +59,21 @@ private:
     void printUsage(void);
 
 private slots:
+    void sendData(void);
+    void sendCommand(void);
+
+    void processData(const QLowEnergyCharacteristic &c, const QByteArray &value);
+
     void deviceDiscovered(const QBluetoothDeviceInfo &device);
     void deviceDiscoveryFinished(void);
     void serviceDiscovered(const QBluetoothUuid &service);
     void serviceDiscoveryFinished(void);
     void serviceStateChanged(QLowEnergyService::ServiceState s);
 
-    void sendData(void);
-    void sendCommand(void);
-
-    void processData(const QLowEnergyCharacteristic &c, const QByteArray &value);
-    void processDeviceError(void);
-    void processRemoteError(void);
+    void errorScan(void);
+    void errorLink(void);
+    void errorDevice(void);
+    void errorService(void);
 
 signals:
     void finished(int err = OK);
