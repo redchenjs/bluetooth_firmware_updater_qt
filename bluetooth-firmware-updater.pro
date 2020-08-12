@@ -9,8 +9,6 @@
 
 QT += core bluetooth
 
-CONFIG += c++17
-
 TARGET = btfwupd
 TEMPLATE = app
 
