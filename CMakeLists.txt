@@ -14,7 +14,6 @@ find_package(Qt5Bluetooth REQUIRED)
 set(SOURCES src/main.cpp src/fwupd.cpp)
 add_executable(${TARGET_NAME} ${SOURCES})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 target_link_libraries(${TARGET_NAME} Qt5::Core Qt5::Bluetooth)
 
 set(INSTALL_DIR bin)
