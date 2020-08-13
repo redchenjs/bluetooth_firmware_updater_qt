@@ -54,9 +54,9 @@ void FirmwareUpdater::printUsage(void)
     std::cout << "Usage:" << std::endl;
     std::cout << "    " << m_arg[0] << " BD_ADDR COMMAND" << std::endl << std::endl;
     std::cout << "Commands:" << std::endl;
-    std::cout << "    get-info\t\t\tget device information" << std::endl;
-    std::cout << "    update [firmware.bin]\tupdate device firmware" << std::endl;
-    std::cout << "    reset\t\t\treset the device" << std::endl;
+    std::cout << "    get-info                  get device information" << std::endl;
+    std::cout << "    update [firmware.bin]     update device firmware" << std::endl;
+    std::cout << "    reset                     reset the device" << std::endl;
 
     stop(ERR_ARG);
 }
