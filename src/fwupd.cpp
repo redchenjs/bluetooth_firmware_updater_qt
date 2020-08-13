@@ -166,12 +166,12 @@ void FirmwareUpdater::deviceDiscoveryFinished(void)
         connect(m_control, &QLowEnergyController::connected, this, [&]()->void{m_control->discoverServices();});
         connect(m_control, SIGNAL(serviceDiscovered(QBluetoothUuid)), this, SLOT(serviceDiscovered(QBluetoothUuid)));
         connect(m_control, SIGNAL(discoveryFinished()), this, SLOT(serviceDiscoveryFinished()));
-        connect(m_control, SIGNAL(disconnected()), this, SLOT(errorLink()));
-        connect(m_control, SIGNAL(error(QLowEnergyController::Error)), this, SLOT(errorDevice()));
+        connect(m_control, SIGNAL(disconnected()), this, SLOT(errorConn()));
+        connect(m_control, SIGNAL(error(QLowEnergyController::Error)), this, SLOT(errorDevice(QLowEnergyController::Error)));
 
         m_control->connectToDevice();
     } else {
-        errorScan();
+        errorScan(QBluetoothDeviceDiscoveryAgent::NoError);
     }
 }
 
@@ -191,12 +191,12 @@ void FirmwareUpdater::serviceDiscoveryFinished(void)
             connect(m_service, SIGNAL(stateChanged(QLowEnergyService::ServiceState)), this, SLOT(serviceStateChanged(QLowEnergyService::ServiceState)));
             connect(m_service, SIGNAL(characteristicChanged(QLowEnergyCharacteristic, QByteArray)), this, SLOT(processData(QLowEnergyCharacteristic, QByteArray)));
             connect(m_service, SIGNAL(descriptorWritten(QLowEnergyDescriptor, QByteArray)), this, SLOT(sendCommand()));
-            connect(m_service, SIGNAL(error(QLowEnergyService::ServiceError)), this, SLOT(errorService()));
+            connect(m_service, SIGNAL(error(QLowEnergyService::ServiceError)), this, SLOT(errorService(QLowEnergyService::ServiceError)));
 
             m_service->discoverDetails();
         }
     } else {
-        errorDevice();
+        errorDevice(QLowEnergyController::NoError);
     }
 }
 
@@ -222,58 +222,68 @@ void FirmwareUpdater::serviceStateChanged(QLowEnergyService::ServiceState s)
     }
 }
 
-void FirmwareUpdater::errorScan(void)
+void FirmwareUpdater::errorConn(void)
 {
+    stop(ERR_CONN);
+}
+
+void FirmwareUpdater::errorScan(QBluetoothDeviceDiscoveryAgent::Error err)
+{
+    Q_UNUSED(err);
+
     stop(ERR_SCAN);
 }
 
-void FirmwareUpdater::errorLink(void)
+void FirmwareUpdater::errorDevice(QLowEnergyController::Error err)
 {
-    stop(ERR_LINK);
-}
+    Q_UNUSED(err);
 
-void FirmwareUpdater::errorDevice(void)
-{
     stop(ERR_DEVICE);
 }
 
-void FirmwareUpdater::errorService(void)
+void FirmwareUpdater::errorService(QLowEnergyService::ServiceError err)
 {
+    Q_UNUSED(err);
+
     stop(ERR_SERVICE);
 }
 
 void FirmwareUpdater::stop(int err)
 {
-    if (rw_state != RW_NONE) {
-        std::cout << std::endl;
-    }
+    if (err_code == NONE) {
+        err_code = err;
 
-    switch (err) {
-    case ERR_SCAN:
-        std::cout << ">? ERROR" << std::endl;
-        break;
-    case ERR_LINK:
-        if (m_cmd_idx == CMD_IDX_RST) {
-            std::cout << ">! OK" << std::endl;
-        } else {
-            std::cout << ">! ERROR" << std::endl;
+        if (rw_state != RW_NONE) {
+            std::cout << std::endl;
         }
-        break;
-    case ERR_DEVICE:
-        std::cout << ">- ERROR" << std::endl;
-        break;
-    case ERR_SERVICE:
-        std::cout << ">+ ERROR" << std::endl;
-        break;
-    default:
-        break;
-    }
 
-    if (m_control) {
-        m_control->disconnectFromDevice();
-    }
+        switch (err) {
+        case ERR_CONN:
+            if (m_cmd_idx == CMD_IDX_RST) {
+                std::cout << ">! OK" << std::endl;
+            } else {
+                std::cout << ">! ERROR" << std::endl;
+            }
+            break;
+        case ERR_SCAN:
+            std::cout << ">? ERROR" << std::endl;
+            break;
+        case ERR_DEVICE:
+            std::cout << ">- ERROR" << std::endl;
+            break;
+        case ERR_SERVICE:
+            std::cout << ">+ ERROR" << std::endl;
+            break;
+        default:
+            break;
+        }
 
-    emit finished(err);
+        if (m_control) {
+            m_control->disconnectFromDevice();
+        }
+
+        emit finished(err);
+    }
 }
 
 void FirmwareUpdater::start(int argc, char *argv[])
@@ -324,7 +334,7 @@ void FirmwareUpdater::start(int argc, char *argv[])
     connect(m_device_discovery_agent, SIGNAL(deviceDiscovered(QBluetoothDeviceInfo)), this, SLOT(deviceDiscovered(QBluetoothDeviceInfo)));
     connect(m_device_discovery_agent, SIGNAL(finished()), this, SLOT(deviceDiscoveryFinished()));
     connect(m_device_discovery_agent, SIGNAL(canceled()), this, SLOT(deviceDiscoveryFinished()));
-    connect(m_device_discovery_agent, SIGNAL(error(QBluetoothDeviceDiscoveryAgent::Error)), this, SLOT(errorScan()));
+    connect(m_device_discovery_agent, SIGNAL(error(QBluetoothDeviceDiscoveryAgent::Error)), this, SLOT(errorScan(QBluetoothDeviceDiscoveryAgent::Error)));
 
     m_device_discovery_agent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 }

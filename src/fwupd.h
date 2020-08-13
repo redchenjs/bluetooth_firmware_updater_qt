@@ -11,18 +11,19 @@
 #include <QtCore>
 #include <QtBluetooth>
 
+#define NONE         1
 #define OK           0
 #define ERR_ARG     -1
 #define ERR_FILE    -2
 #define ERR_ABORT   -3
-#define ERR_SCAN    -4
-#define ERR_LINK    -5
+#define ERR_CONN    -4
+#define ERR_SCAN    -5
 #define ERR_DEVICE  -6
 #define ERR_SERVICE -7
 
-#define RW_NONE     0
-#define RW_READ     1
-#define RW_WRITE    2
+#define RW_NONE      0
+#define RW_READ      1
+#define RW_WRITE     2
 
 class FirmwareUpdater: public QObject
 {
@@ -46,14 +47,15 @@ private:
     QLowEnergyCharacteristic m_characteristic;
     QLowEnergyDescriptor m_descriptor;
 
-    size_t m_cmd_idx = 0;
+    int m_cmd_idx = 0;
     char m_cmd_str[32] = {0};
 
     QFile *data_fd = nullptr;
     uint32_t data_size = 0;
     uint32_t data_done = 0;
 
-    size_t rw_state = RW_NONE;
+    int err_code = NONE;
+    int rw_state = RW_NONE;
 
     void printUsage(void);
 
@@ -69,10 +71,10 @@ private slots:
     void serviceDiscoveryFinished(void);
     void serviceStateChanged(QLowEnergyService::ServiceState s);
 
-    void errorScan(void);
-    void errorLink(void);
-    void errorDevice(void);
-    void errorService(void);
+    void errorConn(void);
+    void errorScan(QBluetoothDeviceDiscoveryAgent::Error err);
+    void errorDevice(QLowEnergyController::Error err);
+    void errorService(QLowEnergyService::ServiceError err);
 
 signals:
     void finished(int err = OK);
