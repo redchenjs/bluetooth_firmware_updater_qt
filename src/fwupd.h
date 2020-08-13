@@ -50,7 +50,6 @@ private:
     char m_cmd_str[32] = {0};
 
     QFile *data_fd = nullptr;
-    QTimer *data_tim = nullptr;
     uint32_t data_size = 0;
     uint32_t data_done = 0;
 

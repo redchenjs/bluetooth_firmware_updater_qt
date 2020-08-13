@@ -70,14 +70,13 @@ void FirmwareUpdater::sendData(void)
         std::cout << ">> SENT:100%\r";
 
         data_fd->close();
-        data_tim->stop();
 
-        disconnect(data_tim, SIGNAL(timeout()));
+        disconnect(m_service, SIGNAL(characteristicWritten(const QLowEnergyCharacteristic, const QByteArray)));
     } else {
         std::cout << ">> SENT:" << data_done*100/data_size << "%\r";
 
         QByteArray read_buff = data_fd->read(read_length);
-        m_service->writeCharacteristic(m_characteristic, read_buff, QLowEnergyService::WriteWithoutResponse);
+        m_service->writeCharacteristic(m_characteristic, read_buff, QLowEnergyService::WriteWithResponse);
 
         data_done += read_length;
     }
@@ -87,7 +86,7 @@ void FirmwareUpdater::sendCommand(void)
 {
     std::cout << "=> " << m_cmd_str;
 
-    m_service->writeCharacteristic(m_characteristic, m_cmd_str, QLowEnergyService::WriteWithoutResponse);
+    m_service->writeCharacteristic(m_characteristic, m_cmd_str, QLowEnergyService::WriteWithResponse);
 }
 
 void FirmwareUpdater::processData(const QLowEnergyCharacteristic &c, const QByteArray &value)
@@ -111,9 +110,9 @@ void FirmwareUpdater::processData(const QLowEnergyCharacteristic &c, const QByte
                     if (rw_state == RW_NONE) {
                         rw_state = RW_WRITE;
 
-                        connect(data_tim, &QTimer::timeout, this, [&]()->void{this->sendData();});
+                        connect(m_service, SIGNAL(characteristicWritten(const QLowEnergyCharacteristic, const QByteArray)), this, SLOT(sendData()));
 
-                        data_tim->start(10);
+                        sendData();
                     } else {
                         rw_state = RW_NONE;
 
@@ -247,8 +246,6 @@ void FirmwareUpdater::stop(int err)
 {
     if (rw_state != RW_NONE) {
         std::cout << std::endl;
-
-        data_tim->stop();
     }
 
     switch (err) {
@@ -294,8 +291,6 @@ void FirmwareUpdater::start(int argc, char *argv[])
             stop(ERR_FILE);
             return;
         }
-
-        data_tim = new QTimer(this);
 
         data_size = static_cast<uint32_t>(data_fd->size());
         data_done = 0;
