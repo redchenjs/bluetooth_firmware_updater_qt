@@ -281,30 +281,39 @@ void FirmwareUpdater::start(int argc, char *argv[])
     m_arg = argv;
     std::cout << std::unitbuf;
 
-    QString command = QString(m_arg[2]);
+    if (argc >= 3) {
+        QString command = QString(m_arg[2]);
 
-    if (command == "get-info" && argc == 3) {
-        m_cmd_idx = CMD_IDX_RAM;
-        snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_RAM"\r\n");
-    } else if (command == "update" && argc == 4) {
-        data_fd = new QFile(m_arg[3]);
-        if (!data_fd->open(QIODevice::ReadOnly)) {
-            std::cout << "Could not open file" << std::endl;
+        if (command == "get-info" && argc == 3) {
+            m_cmd_idx = CMD_IDX_RAM;
+            snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_RAM"\r\n");
+        } else if (command == "update" && argc == 4) {
+            data_fd = new QFile(m_arg[3]);
+            if (!data_fd->open(QIODevice::ReadOnly)) {
+                std::cout << "Could not open file" << std::endl;
 
-            stop(ERR_FILE);
+                stop(ERR_FILE);
+                return;
+            }
+
+            data_size = static_cast<uint32_t>(data_fd->size());
+            data_done = 0;
+
+            m_cmd_idx = CMD_IDX_UPD;
+            snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_UPD"\r\n", data_size);
+        } else if (command == "reset" && argc == 3) {
+            m_cmd_idx = CMD_IDX_RST;
+            snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_RST"\r\n");
+        } else {
+            printUsage();
+
+            stop(ERR_ARG);
             return;
         }
-
-        data_size = static_cast<uint32_t>(data_fd->size());
-        data_done = 0;
-
-        m_cmd_idx = CMD_IDX_UPD;
-        snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_UPD"\r\n", data_size);
-    } else if (command == "reset" && argc == 3) {
-        m_cmd_idx = CMD_IDX_RST;
-        snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_RST"\r\n");
     } else {
         printUsage();
+
+        stop(ERR_ARG);
         return;
     }
 
