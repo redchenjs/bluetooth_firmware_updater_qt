@@ -16,10 +16,9 @@
 #define ERR_ARG     -1
 #define ERR_FILE    -2
 #define ERR_ABORT   -3
-#define ERR_CONN    -4
-#define ERR_SCAN    -5
-#define ERR_DEVICE  -6
-#define ERR_SERVICE -7
+#define ERR_DISCOVR -4
+#define ERR_CONTROL -5
+#define ERR_SERVICE -6
 
 #define RW_NONE      0
 #define RW_READ      1
@@ -36,8 +35,8 @@ public:
 private:
     char **m_arg = nullptr;
 
-    QBluetoothAddress m_device_address;
-    QBluetoothDeviceDiscoveryAgent *m_device_discovery_agent = nullptr;
+    QBluetoothAddress m_address;
+    QBluetoothDeviceDiscoveryAgent *m_discovery = nullptr;
     QLowEnergyController *m_control = nullptr;
     QLowEnergyService *m_service = nullptr;
     QLowEnergyCharacteristic m_characteristic;
@@ -45,6 +44,7 @@ private:
 
     int m_cmd_idx = 0;
     char m_cmd_str[32] = {0};
+    bool m_cmd_sent = false;
 
     QFile *data_fd = nullptr;
     uint32_t data_size = 0;
@@ -64,13 +64,13 @@ private slots:
     void deviceDiscovered(const QBluetoothDeviceInfo &device);
     void deviceDiscoveryFinished(void);
     void deviceConnected(void);
+    void deviceDisconnected(void);
     void serviceDiscovered(const QBluetoothUuid &service);
     void serviceDiscoveryFinished(void);
     void serviceStateChanged(QLowEnergyService::ServiceState state);
 
-    void errorConn(void);
-    void errorScan(QBluetoothDeviceDiscoveryAgent::Error err);
-    void errorDevice(QLowEnergyController::Error err);
+    void errorDiscovery(QBluetoothDeviceDiscoveryAgent::Error err);
+    void errorControl(QLowEnergyController::Error err);
     void errorService(QLowEnergyService::ServiceError err);
 
 signals:
