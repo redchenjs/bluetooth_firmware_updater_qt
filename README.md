@@ -23,20 +23,20 @@ make
 
 ## Usage
 
+### Get device information
+
+```
+btfwupd BD_ADDR get-info
+```
+
 ### Update device firmware
 
 ```
 btfwupd BD_ADDR update firmware.bin
 ```
 
-### Reset device
+### Reset the device
 
 ```
 btfwupd BD_ADDR reset
-```
-
-### Get device information
-
-```
-btfwupd BD_ADDR info
 ```

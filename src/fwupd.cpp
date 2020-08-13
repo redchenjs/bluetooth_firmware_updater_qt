@@ -54,9 +54,9 @@ void FirmwareUpdater::printUsage(void)
     std::cout << "Usage:" << std::endl;
     std::cout << "    " << m_arg[0] << " BD_ADDR COMMAND" << std::endl << std::endl;
     std::cout << "Commands:" << std::endl;
-    std::cout << "    update [firmware.bin]\tupdate device firmware with [firmware.bin]" << std::endl;
-    std::cout << "    reset\t\t\tdisable auto reconnect and then reset the device" << std::endl;
-    std::cout << "    info\t\t\tget device information" << std::endl;
+    std::cout << "    get-info\t\t\tget device information" << std::endl;
+    std::cout << "    update [firmware.bin]\tupdate device firmware" << std::endl;
+    std::cout << "    reset\t\t\treset the device" << std::endl;
 
     stop(ERR_ARG);
 }
@@ -283,7 +283,10 @@ void FirmwareUpdater::start(int argc, char *argv[])
 
     QString command = QString(m_arg[2]);
 
-    if (command == "update" && argc == 4) {
+    if (command == "get-info" && argc == 3) {
+        m_cmd_idx = CMD_IDX_RAM;
+        snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_RAM"\r\n");
+    } else if (command == "update" && argc == 4) {
         data_fd = new QFile(m_arg[3]);
         if (!data_fd->open(QIODevice::ReadOnly)) {
             std::cout << "Could not open file" << std::endl;
@@ -300,9 +303,6 @@ void FirmwareUpdater::start(int argc, char *argv[])
     } else if (command == "reset" && argc == 3) {
         m_cmd_idx = CMD_IDX_RST;
         snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_RST"\r\n");
-    } else if (command == "info" && argc == 3) {
-        m_cmd_idx = CMD_IDX_RAM;
-        snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_RAM"\r\n");
     } else {
         printUsage();
     }
