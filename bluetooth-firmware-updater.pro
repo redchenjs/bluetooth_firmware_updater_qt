@@ -9,7 +9,7 @@
 
 QT += core bluetooth
 
-CONFIG += static
+CONFIG += static console
 
 TARGET = btfwupd
 TEMPLATE = app
