@@ -36,12 +36,8 @@ public:
 private:
     char **m_arg = nullptr;
 
-    bool m_device_found = false;
-    bool m_service_found = false;
-
     QBluetoothAddress m_device_address;
     QBluetoothDeviceDiscoveryAgent *m_device_discovery_agent = nullptr;
-    QBluetoothDeviceInfo m_device;
     QLowEnergyController *m_control = nullptr;
     QLowEnergyService *m_service = nullptr;
     QLowEnergyCharacteristic m_characteristic;
@@ -67,9 +63,10 @@ private slots:
 
     void deviceDiscovered(const QBluetoothDeviceInfo &device);
     void deviceDiscoveryFinished(void);
+    void deviceConnected(void);
     void serviceDiscovered(const QBluetoothUuid &service);
     void serviceDiscoveryFinished(void);
-    void serviceStateChanged(QLowEnergyService::ServiceState s);
+    void serviceStateChanged(QLowEnergyService::ServiceState state);
 
     void errorConn(void);
     void errorScan(QBluetoothDeviceDiscoveryAgent::Error err);
