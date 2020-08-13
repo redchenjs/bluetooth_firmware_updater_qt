@@ -305,6 +305,7 @@ void FirmwareUpdater::start(int argc, char *argv[])
         snprintf(m_cmd_str, sizeof(m_cmd_str), CMD_FMT_RST"\r\n");
     } else {
         printUsage();
+        return;
     }
 
     m_device_address = QBluetoothAddress(m_arg[1]);
