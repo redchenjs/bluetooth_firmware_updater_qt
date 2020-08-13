@@ -6,10 +6,8 @@ Bluetooth Firmware Updater using BLE GATT profile.
 ## Dependencies
 
 ```
-cmake
-pkg-config
-qt5-default
-qt5connectivity-dev
+qt5-base
+qt5-connectivity
 ```
 
 ## Build
@@ -17,7 +15,7 @@ qt5connectivity-dev
 ```
 mkdir -p build
 cd build
-cmake ../
+qmake-qt5 ../
 make
 ```
 
