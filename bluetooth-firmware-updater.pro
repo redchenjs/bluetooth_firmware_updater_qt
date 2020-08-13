@@ -9,6 +9,8 @@
 
 QT += core bluetooth
 
+CONFIG += static
+
 TARGET = btfwupd
 TEMPLATE = app
 
