@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 
     QObject::connect(&fwupd, SIGNAL(finished()), &app, SLOT(quit()));
 
-    QTimer::singleShot(0, &fwupd, [&]()->void{fwupd.start(argc, argv);});
+    QTimer::singleShot(0, &fwupd, [&]() -> void { fwupd.start(argc, argv); });
 
     return app.exec();
 }

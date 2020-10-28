@@ -28,13 +28,13 @@ enum cmd_idx {
     CMD_IDX_UPD = 0x0,
     CMD_IDX_RST = 0x1,
     CMD_IDX_RAM = 0x2,
-    CMD_IDX_VER = 0x3,
+    CMD_IDX_VER = 0x3
 };
 
 enum rsp_idx {
     RSP_IDX_NONE  = 0x0,
     RSP_IDX_TRUE  = 0x1,
-    RSP_IDX_FALSE = 0x2,
+    RSP_IDX_FALSE = 0x2
 };
 
 typedef struct {
@@ -43,10 +43,10 @@ typedef struct {
 } rsp_fmt_t;
 
 static const rsp_fmt_t rsp_fmt[] = {
-    {  true, "OK\r\n" },     // OK
-    {  true, "DONE\r\n" },   // Done
-    { false, "FAIL\r\n" },   // Fail
-    { false, "ERROR\r\n" },  // Error
+    { true,  "OK\r\n"    },
+    { true,  "DONE\r\n"  },
+    { false, "FAIL\r\n"  },
+    { false, "ERROR\r\n" }
 };
 
 void FirmwareUpdater::printUsage(void)
@@ -73,7 +73,7 @@ void FirmwareUpdater::sendData(void)
 
         disconnect(m_service, SIGNAL(characteristicWritten(const QLowEnergyCharacteristic, const QByteArray)));
     } else {
-        std::cout << ">> SENT:" << data_done*100/data_size << "%\r";
+        std::cout << ">> SENT:" << data_done * 100 / data_size << "%\r";
 
         QByteArray read_buff = data_fd->read(read_length);
         m_service->writeCharacteristic(m_characteristic, read_buff, QLowEnergyService::WriteWithResponse);
@@ -100,7 +100,7 @@ void FirmwareUpdater::processData(const QLowEnergyCharacteristic &c, const QByte
         return;
     }
 
-    for (uint8_t i=0; i<sizeof(rsp_fmt)/sizeof(rsp_fmt_t); i++) {
+    for (uint8_t i = 0; i < sizeof(rsp_fmt) / sizeof(rsp_fmt_t); i++) {
         if (strncmp(recv_buff, rsp_fmt[i].fmt, strlen(rsp_fmt[i].fmt)) == 0) {
             if (rw_state != RW_NONE) {
                 std::cout << std::endl;
@@ -199,7 +199,7 @@ void FirmwareUpdater::serviceDiscoveryFinished(void)
         connect(m_service, SIGNAL(descriptorWritten(QLowEnergyDescriptor, QByteArray)), this, SLOT(sendCommand()));
         connect(m_service, SIGNAL(error(QLowEnergyService::ServiceError)), this, SLOT(errorService(QLowEnergyService::ServiceError)));
 
-        QTimer::singleShot(0, this, [&]()->void{m_service->discoverDetails();});
+        QTimer::singleShot(0, this, [&]() -> void { m_service->discoverDetails(); });
     } else {
         errorService(QLowEnergyService::NoError);
     }

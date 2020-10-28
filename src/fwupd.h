@@ -20,11 +20,11 @@
 #define ERR_CONTROL -5
 #define ERR_SERVICE -6
 
-#define RW_NONE      0
-#define RW_READ      1
-#define RW_WRITE     2
+#define RW_NONE  0
+#define RW_READ  1
+#define RW_WRITE 2
 
-class FirmwareUpdater: public QObject
+class FirmwareUpdater : public QObject
 {
     Q_OBJECT
 
