@@ -9,12 +9,10 @@
 
 QT += core bluetooth
 
-CONFIG += static console
+CONFIG += console
 
 TARGET = btfwupd
 TEMPLATE = app
 
 SOURCES += src/main.cpp src/fwupd.cpp
 HEADERS += src/fwupd.h
-
-QMAKE_LFLAGS += "-Wl,-rpath,\'\$$ORIGIN\'"
